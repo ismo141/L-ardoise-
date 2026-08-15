@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>L'Ardoise — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --ink:#12191B; --panel:#1B2426; --panel2:#212C2E; --line:rgba(243,241,231,0.10);
+    --chalk:#F3F1E7; --muted:rgba(243,241,231,0.55);
+    --mustard:#E4A73B; --terracotta:#C4552E; --teal:#3E8E7E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  body{background:var(--ink); color:var(--chalk); font-family:'Inter',sans-serif; min-height:100vh;}
+  input,button{font-family:inherit; outline:none;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .serif{font-family:'Fraunces',serif;}
+
+  /* ---- Auth screens ---- */
+  .auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:380px;}
+  .auth-eyebrow{color:var(--mustard); font-size:12px; letter-spacing:0.2em; text-transform:uppercase; font-weight:600; text-align:center; margin-bottom:8px;}
+  .auth-title{font-family:'Fraunces',serif; font-weight:700; font-size:26px; text-align:center; margin-bottom:24px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; color:var(--muted); font-size:12px; margin-bottom:4px;}
+  .field input{width:100%; padding:10px 12px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--chalk); font-size:14px;}
+  .btn{width:100%; padding:12px; border-radius:10px; border:none; font-weight:600; font-size:14px; cursor:pointer; transition:transform .1s;}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--terracotta); color:var(--chalk);}
+  .btn-ghost{background:transparent; color:var(--muted); font-size:13px; text-align:center; margin-top:10px; width:100%; border:none; cursor:pointer;}
+  .msg-error{color:var(--terracotta); font-size:13px; margin:8px 0;}
+  .msg-info{color:var(--teal); font-size:13px; margin:8px 0;}
+
+  /* ---- Shell ---- */
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:230px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); padding:20px 0; position:sticky; top:0; height:100vh; overflow-y:auto;}
+  .brand{padding:0 20px 20px 20px; border-bottom:1px solid var(--line); margin-bottom:12px;}
+  .brand-name{font-family:'Fraunces',serif; font-weight:700; font-size:18px;}
+  .brand-sub{color:var(--mustard); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; margin-top:2px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); font-size:13.5px; font-weight:500; cursor:pointer; border-left:3px solid transparent; position:relative;}
+  .nav-item:hover{color:var(--chalk); background:rgba(243,241,231,0.03);}
+  .nav-item.active{color:var(--chalk); border-left-color:var(--terracotta); background:rgba(196,85,46,0.08);}
+  .nav-item .tag{position:absolute; left:14px; top:8px; width:8px; height:4px; border-radius:1px; opacity:0;}
+  .nav-item.active .tag{opacity:0.9; background:var(--mustard);}
+  .nav-count{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);}
+
+  .main{flex:1; min-width:0;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--ink); z-index:5;}
+  .topbar-title{font-family:'Fraunces',serif; font-weight:700; font-size:20px;}
+  .topbar-right{display:flex; align-items:center; gap:14px; font-size:13px; color:var(--muted);}
+  .logout{color:var(--muted); background:none; border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:12.5px; cursor:pointer;}
+  .logout:hover{color:var(--chalk); border-color:var(--muted);}
+  .content{padding:24px 28px 60px 28px;}
+
+  /* mobile: sidebar becomes horizontal top scroll */
+  @media (max-width: 820px){
+    .shell{flex-direction:column;}
+    .sidebar{width:100%; height:auto; position:sticky; top:0; display:flex; overflow-x:auto; padding:10px 8px; border-right:none; border-bottom:1px solid var(--line);}
+    .brand{display:none;}
+    .nav-item{border-left:none; border-bottom:3px solid transparent; padding:8px 14px; white-space:nowrap;}
+    .nav-item.active{border-bottom-color:var(--terracotta);}
+    .nav-item .tag{display:none;}
+    .content{padding:18px 16px 50px 16px;}
+  }
+
+  /* ---- Stat cards ---- */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px;}
+  .stat-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .stat-label{color:var(--muted); font-size:12px;}
+  .stat-value{font-family:'Fraunces',serif; font-weight:700; font-size:24px; margin-top:4px;}
+
+  /* ---- Tables ---- */
+  .section-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+  .section-title{font-family:'Fraunces',serif; font-weight:700; font-size:18px;}
+  .filters{display:flex; gap:6px; flex-wrap:wrap;}
+  .chip{padding:6px 12px; border-radius:999px; font-size:12.5px; border:1px solid var(--line); color:var(--muted); cursor:pointer; background:transparent;}
+  .chip.active{color:var(--ink); background:var(--mustard); border-color:var(--mustard); font-weight:600;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--muted); font-weight:600; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); white-space:nowrap;}
+  td{padding:10px 14px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(243,241,231,0.02);}
+  .empty{color:var(--muted); font-size:13px; padding:30px; text-align:center;}
+  .badge{display:inline-block; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600;}
+  .badge-ok{background:rgba(62,142,126,0.18); color:var(--teal);}
+  .badge-bad{background:rgba(196,85,46,0.18); color:var(--terracotta);}
+  .badge-wait{background:rgba(228,167,59,0.18); color:var(--mustard);}
+  .load-more{margin-top:12px; background:var(--panel); border:1px solid var(--line); color:var(--muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:12.5px;}
+  .admin-add{display:flex; gap:8px; margin-bottom:16px; max-width:420px;}
+  .admin-add input{flex:1; padding:9px 12px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--chalk); font-size:13px;}
+  .admin-add button{padding:9px 16px; border-radius:8px; border:none; background:var(--teal); color:var(--ink); font-weight:600; font-size:13px; cursor:pointer;}
+  .btn-danger-sm{background:transparent; border:1px solid var(--terracotta); color:var(--terracotta); padding:4px 10px; border-radius:6px; font-size:11.5px; cursor:pointer;}
+  .loading{color:var(--muted); padding:30px; text-align:center; font-size:13px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ================= CONFIG ================= */
+const SUPABASE_URL = "https://oylkospuvhjiercerxpr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95bGtvc3B1dmhqaWVyY2VyeHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNDkyMDUsImV4cCI6MjA5NjgyNTIwNX0.AplzoLqkxm8QBThLnkFxvnCs_alR75zeuS9tNiytzkc";
+const FN_URL = SUPABASE_URL + "/functions/v1/";
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ================= STATE ================= */
+let state = {
+  session: null,
+  isAdmin: null,      // null = unknown, true/false once checked
+  view: "login",       // login | bootstrap-choice | signup | dashboard
+  tab: "overview",
+  authError: "",
+  authInfo: "",
+  cache: {},
+};
+
+const app = document.getElementById("app");
+
+/* ================= HELPERS ================= */
+function money(n, devise){ return Math.round(n||0).toLocaleString('fr-FR') + " " + (devise||"XOF"); }
+function dt(s){ if(!s) return "—"; const d = new Date(s); return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); }
+function dtFull(s){ if(!s) return "—"; const d = new Date(s); return d.toLocaleDateString('fr-FR') + " " + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}); }
+function esc(s){ return (s===null||s===undefined) ? "" : String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+async function callFn(name, body){
+  const res = await fetch(FN_URL + name, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + state.session.access_token },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || "Erreur serveur");
+  return data;
+}
+
+/* ================= AUTH FLOW ================= */
+async function checkAdmin(){
+  const { data } = await sb.from("administrateurs").select("user_id").eq("user_id", state.session.user.id).maybeSingle();
+  state.isAdmin = !!data;
+}
+
+async function refreshSession(){
+  const { data } = await sb.auth.getSession();
+  state.session = data.session;
+  if(state.session){
+    await checkAdmin();
+    state.view = state.isAdmin ? "dashboard" : "not-admin";
+  } else {
+    state.view = "login";
+  }
+  render();
+}
+
+async function doLogin(email, password){
+  state.authError = ""; render();
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ state.authError = "Email ou mot de passe incorrect."; render(); return; }
+  state.session = data.session;
+  await checkAdmin();
+  if(!state.isAdmin){
+    state.view = "not-admin";
+  } else {
+    state.view = "dashboard";
+  }
+  render();
+}
+
+async function doSignupThenBootstrap(email, password){
+  state.authError = ""; state.authInfo = ""; render();
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if(error){ state.authError = error.message; render(); return; }
+  if(!data.session){
+    state.authInfo = "Compte créé. Si la confirmation par email est activée, confirmez puis reconnectez-vous.";
+    state.view = "login"; render(); return;
+  }
+  state.session = data.session;
+  try {
+    await callFn("admin-bootstrap", {});
+    state.isAdmin = true;
+    state.view = "dashboard";
+  } catch(e){
+    state.authError = e.message;
+    state.view = "not-admin";
+  }
+  render();
+}
+
+function doLogout(){
+  sb.auth.signOut();
+  state = { session:null, isAdmin:null, view:"login", tab:"overview", authError:"", authInfo:"", cache:{} };
+  render();
+}
+
+/* ================= RENDER: AUTH SCREENS ================= */
+function renderLogin(){
+  app.innerHTML = `
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-eyebrow">L'Ardoise</div>
+        <div class="auth-title">Espace administrateur</div>
+        <div class="field"><label>Email</label><input id="li-email" type="email" placeholder="admin@exemple.com" /></div>
+        <div class="field"><label>Mot de passe</label><input id="li-pass" type="password" placeholder="••••••••" /></div>
+        ${state.authError ? `<div class="msg-error">${esc(state.authError)}</div>` : ""}
+        ${state.authInfo ? `<div class="msg-info">${esc(state.authInfo)}</div>` : ""}
+        <button class="btn btn-primary" id="li-submit" style="margin-top:6px;">Se connecter</button>
+        <button class="btn-ghost" id="li-bootstrap">Premier accès — créer le compte admin</button>
+      </div>
+    </div>`;
+  document.getElementById("li-submit").onclick = () => doLogin(document.getElementById("li-email").value.trim(), document.getElementById("li-pass").value);
+  document.getElementById("li-bootstrap").onclick = () => { state.view = "signup"; render(); };
+}
+
+function renderSignup(){
+  app.innerHTML = `
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-eyebrow">L'Ardoise</div>
+        <div class="auth-title">Créer le compte admin</div>
+        <div class="msg-info" style="margin-bottom:12px;">Ceci ne fonctionne qu'une seule fois — tant qu'aucun administrateur n'existe encore.</div>
+        <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="admin@exemple.com" /></div>
+        <div class="field"><label>Mot de passe</label><input id="su-pass" type="password" placeholder="8 caractères minimum" /></div>
+        ${state.authError ? `<div class="msg-error">${esc(state.authError)}</div>` : ""}
+        <button class="btn btn-primary" id="su-submit">Créer et activer l'accès admin</button>
+        <button class="btn-ghost" id="su-back">← Retour à la connexion</button>
+      </div>
+    </div>`;
+  document.getElementById("su-submit").onclick = () => doSignupThenBootstrap(document.getElementById("su-email").value.trim(), document.getElementById("su-pass").value);
+  document.getElementById("su-back").onclick = () => { state.authError=""; state.view = "login"; render(); };
+}
+
+function renderNotAdmin(){
+  app.innerHTML = `
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-eyebrow">L'Ardoise</div>
+        <div class="auth-title">Accès refusé</div>
+        <div class="msg-error" style="text-align:center; margin-bottom:16px;">${esc(state.authError || "Ce compte n'a pas les droits administrateur. Demandez à un administrateur existant de vous ajouter (email : " + (state.session?.user?.email || "") + ").")}</div>
+        <button class="btn btn-primary" id="na-logout">Se déconnecter</button>
+      </div>
+    </div>`;
+  document.getElementById("na-logout").onclick = doLogout;
+}
+
+/* ================= NAV CONFIG ================= */
+const NAV = [
+  { id:"overview", label:"Vue d'ensemble" },
+  { id:"boutiques", label:"Boutiques" },
+  { id:"clients", label:"Clients" },
+  { id:"credits", label:"Crédits" },
+  { id:"paiements", label:"Paiements clients" },
+  { id:"transactions", label:"Paiements Moneroo" },
+  { id:"abonnements", label:"Abonnements" },
+  { id:"portefeuilles", label:"Portefeuilles" },
+  { id:"webhooks", label:"Webhooks" },
+  { id:"admins", label:"Administrateurs" },
+];
+
+function renderShell(){
+  app.innerHTML = `
+    <div class="shell">
+      <div class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-name">L'Ardoise</div>
+          <div class="brand-sub">Console admin</div>
+        </div>
+        ${NAV.map(n => `<div class="nav-item ${state.tab===n.id?'active':''}" data-tab="${n.id}"><span class="tag"></span>${n.label}</div>`).join("")}
+      </div>
+      <div class="main">
+        <div class="topbar">
+          <div class="topbar-title">${NAV.find(n=>n.id===state.tab)?.label || ""}</div>
+          <div class="topbar-right">
+            <span>${esc(state.session.user.email)}</span>
+            <button class="logout" id="logout-btn">Se déconnecter</button>
+          </div>
+        </div>
+        <div class="content" id="content"><div class="loading">Chargement…</div></div>
+      </div>
+    </div>`;
+  document.getElementById("logout-btn").onclick = doLogout;
+  document.querySelectorAll(".nav-item").forEach(el => {
+    el.onclick = () => { state.tab = el.dataset.tab; renderShell(); };
+  });
+  loadTab(state.tab);
+}
+
+/* ================= DATA LOADERS ================= */
+async function loadTab(tab){
+  const content = document.getElementById("content");
+  try {
+    if(tab === "overview") return renderOverview(content);
+    if(tab === "boutiques") return renderTable(content, "boutiques", "boutiques", "id, nom, telephone, quartier, plan, essai_fin, cree_le", "cree_le", row => [
+      row.nom, row.telephone||"—", row.quartier||"—", planBadge(row.plan), dt(row.essai_fin), dt(row.cree_le)
+    ], ["Nom","Téléphone","Quartier","Plan","Fin essai","Créée le"]);
+    if(tab === "clients") return renderTable(content, "clients", "clients", "id, nom, telephone, quartier, plafond, archive, boutique_id, boutiques(nom), cree_le", "cree_le", row => [
+      row.nom, row.boutiques?.nom||"—", row.telephone||"—", money(row.plafond), row.archive ? `<span class="badge badge-bad">Archivé</span>` : `<span class="badge badge-ok">Actif</span>`, dt(row.cree_le)
+    ], ["Nom","Boutique","Téléphone","Plafond","Statut","Créé le"]);
+    if(tab === "credits") return renderTable(content, "credits", "credits", "id, montant, motif, date_vente, echeance, annule, boutique_id, boutiques(nom), clients(nom)", "date_vente", row => [
+      row.clients?.nom||"—", row.boutiques?.nom||"—", money(row.montant), row.motif||"—", dt(row.date_vente), dt(row.echeance), row.annule ? `<span class="badge badge-bad">Annulé</span>` : `<span class="badge badge-ok">Actif</span>`
+    ], ["Client","Boutique","Montant","Motif","Vente","Échéance","Statut"]);
+    if(tab === "paiements") return renderTable(content, "paiements", "paiements", "id, montant, mode, date_paiement, note, boutiques(nom), clients(nom)", "date_paiement", row => [
+      row.clients?.nom||"—", row.boutiques?.nom||"—", money(row.montant), row.mode, row.note||"—", dt(row.date_paiement)
+    ], ["Client","Boutique","Montant","Mode","Note","Date"]);
+    if(tab === "transactions") return renderTransactions(content);
+    if(tab === "abonnements") return renderTable(content, "abonnements", "abonnements", "id, plan, debut, fin, boutiques(nom), cree_le", "cree_le", row => [
+      row.boutiques?.nom||"—", planBadge(row.plan), dt(row.debut), dt(row.fin), dt(row.cree_le)
+    ], ["Boutique","Plan","Début","Fin","Créé le"]);
+    if(tab === "portefeuilles") return renderTable(content, "portefeuilles", "portefeuilles", "id, solde, devise, gele, boutique_id, boutiques(nom), maj_le", "maj_le", row => [
+      row.boutiques?.nom||"—", money(row.solde, row.devise), row.gele ? `<span class="badge badge-bad">Gelé</span>` : `<span class="badge badge-ok">Actif</span>`, dt(row.maj_le)
+    ], ["Boutique","Solde","Statut","Mis à jour"]);
+    if(tab === "webhooks") return renderTable(content, "webhooks_recus", "webhooks_recus", "id, fournisseur, evenement, traite, erreur, recu_le", "recu_le", row => [
+      row.fournisseur, row.evenement||"—", row.traite ? `<span class="badge badge-ok">Traité</span>` : `<span class="badge badge-wait">En attente</span>`, row.erreur ? `<span class="badge badge-bad">Erreur</span> ${esc(row.erreur).slice(0,60)}` : "—", dtFull(row.recu_le)
+    ], ["Fournisseur","Événement","Statut","Erreur","Reçu le"]);
+    if(tab === "admins") return renderAdmins(content);
+  } catch(e){
+    content.innerHTML = `<div class="empty">Erreur de chargement : ${esc(e.message)}</div>`;
+  }
+}
+
+function planBadge(plan){
+  const label = plan || "essai";
+  return `<span class="badge" style="background:rgba(228,167,59,0.15); color:var(--mustard);">${esc(label)}</span>`;
+}
+function statutBadge(s){
+  if(s === "reussie") return `<span class="badge badge-ok">Réussie</span>`;
+  if(s === "echouee") return `<span class="badge badge-bad">Échouée</span>`;
+  if(s === "annulee") return `<span class="badge badge-bad">Annulée</span>`;
+  if(s === "en_attente") return `<span class="badge badge-wait">En attente</span>`;
+  return `<span class="badge badge-wait">Initiée</span>`;
+}
+
+async function renderOverview(content){
+  content.innerHTML = `<div class="loading">Chargement…</div>`;
+  const [boutiques, tx, portefeuilles] = await Promise.all([
+    sb.from("boutiques").select("id, plan", { count: "exact" }),
+    sb.from("transactions_paiement").select("statut, montant"),
+    sb.from("portefeuilles").select("solde, devise"),
+  ]);
+  const b = boutiques.data || [];
+  const t = tx.data || [];
+  const pf = portefeuilles.data || [];
+  const totalBoutiques = boutiques.count ?? b.length;
+  const reussies = t.filter(x=>x.statut==='reussie');
+  const echouees = t.filter(x=>x.statut==='echouee');
+  const montantReussi = reussies.reduce((s,x)=>s+x.montant,0);
+  const soldeTotal = pf.reduce((s,x)=>s+x.solde,0);
+  const parPlan = {};
+  b.forEach(x => { parPlan[x.plan||'essai'] = (parPlan[x.plan||'essai']||0)+1; });
+
+  content.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Boutiques totales</div><div class="stat-value mono">${totalBoutiques}</div></div>
+      <div class="stat-card"><div class="stat-label">Paiements réussis</div><div class="stat-value mono" style="color:var(--teal);">${reussies.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Paiements échoués</div><div class="stat-value mono" style="color:var(--terracotta);">${echouees.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Montant encaissé</div><div class="stat-value mono">${money(montantReussi)}</div></div>
+      <div class="stat-card"><div class="stat-label">Solde portefeuilles</div><div class="stat-value mono">${money(soldeTotal)}</div></div>
+    </div>
+    <div class="section-title" style="margin-bottom:10px;">Répartition par plan</div>
+    <div class="stats-grid">
+      ${Object.entries(parPlan).map(([plan,count]) => `<div class="stat-card"><div class="stat-label">${esc(plan)}</div><div class="stat-value mono">${count}</div></div>`).join("") || `<div class="empty">Aucune boutique.</div>`}
+    </div>`;
+}
+
+async function renderTable(content, key, table, select, orderCol, rowFn, headers, extraFilter){
+  content.innerHTML = `<div class="loading">Chargement…</div>`;
+  let query = sb.from(table).select(select).order(orderCol, { ascending:false }).limit(200);
+  if(extraFilter) query = extraFilter(query);
+  const { data, error } = await query;
+  if(error) throw error;
+  content.innerHTML = `
+    <div class="section-head"><div class="section-title">${data.length} résultat${data.length!==1?'s':''} (200 max affichés)</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${data.length===0 ? `<tr><td colspan="${headers.length}"><div class="empty">Aucune donnée.</div></td></tr>` :
+          data.map(row => `<tr>${rowFn(row).map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    </table></div>`;
+}
+
+let txFilter = "tous";
+async function renderTransactions(content){
+  content.innerHTML = `<div class="loading">Chargement…</div>`;
+  let query = sb.from("transactions_paiement").select("id, reference, montant, devise, plan, statut, methode, checkout_url, cree_le, traite_le, boutiques(nom)").order("cree_le", { ascending:false }).limit(300);
+  const { data, error } = await query;
+  if(error) throw error;
+  const filters = [
+    ["tous","Tous"], ["reussie","Réussies"], ["echouee","Échouées"], ["annulee","Annulées"], ["initiee","En cours"]
+  ];
+  const filtered = txFilter === "tous" ? data : data.filter(x => x.statut === txFilter);
+  content.innerHTML = `
+    <div class="section-head">
+      <div class="section-title">${filtered.length} transaction${filtered.length!==1?'s':''}</div>
+      <div class="filters">${filters.map(([k,l])=>`<button class="chip ${txFilter===k?'active':''}" data-f="${k}">${l}</button>`).join("")}</div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Boutique</th><th>Référence</th><th>Montant</th><th>Plan</th><th>Statut</th><th>Méthode</th><th>Initiée</th><th>Traitée</th></tr></thead>
+      <tbody>
+        ${filtered.length===0 ? `<tr><td colspan="8"><div class="empty">Aucune transaction.</div></td></tr>` :
+          filtered.map(row => `<tr>
+            <td>${esc(row.boutiques?.nom||'—')}</td>
+            <td class="mono" style="font-size:11.5px;">${esc(row.reference)}</td>
+            <td class="mono">${money(row.montant, row.devise)}</td>
+            <td>${esc(row.plan||'—')}</td>
+            <td>${statutBadge(row.statut)}</td>
+            <td>${esc(row.methode||'—')}</td>
+            <td>${dtFull(row.cree_le)}</td>
+            <td>${dtFull(row.traite_le)}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+  content.querySelectorAll(".chip").forEach(el => {
+    el.onclick = () => { txFilter = el.dataset.f; renderTransactions(content); };
+  });
+}
+
+async function renderAdmins(content){
+  content.innerHTML = `<div class="loading">Chargement…</div>`;
+  const { data, error } = await sb.from("administrateurs").select("user_id, note, cree_le").order("cree_le", { ascending:true });
+  if(error) throw error;
+  content.innerHTML = `
+    <div class="section-title" style="margin-bottom:12px;">Ajouter un administrateur</div>
+    <div class="admin-add">
+      <input id="add-admin-email" type="email" placeholder="email@exemple.com" />
+      <button id="add-admin-btn">Ajouter</button>
+    </div>
+    <div id="add-admin-msg" style="margin-bottom:16px; font-size:13px;"></div>
+    <div class="section-title" style="margin-bottom:10px;">Administrateurs actuels (${data.length})</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID utilisateur</th><th>Note</th><th>Depuis</th><th></th></tr></thead>
+      <tbody>
+        ${data.map(row => `<tr>
+          <td class="mono" style="font-size:11.5px;">${esc(row.user_id)}</td>
+          <td>${esc(row.note||'—')}</td>
+          <td>${dt(row.cree_le)}</td>
+          <td>${row.user_id !== state.session.user.id ? `<button class="btn-danger-sm" data-remove="${row.user_id}">Retirer</button>` : ""}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+  document.getElementById("add-admin-btn").onclick = async () => {
+    const email = document.getElementById("add-admin-email").value.trim();
+    const msg = document.getElementById("add-admin-msg");
+    if(!email) return;
+    try {
+      const r = await callFn("admin-manage", { action:"add", email });
+      msg.innerHTML = `<span class="msg-info">${esc(r.message)}</span>`;
+      renderAdmins(content);
+    } catch(e){ msg.innerHTML = `<span class="msg-error">${esc(e.message)}</span>`; }
+  };
+  content.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.onclick = async () => {
+      const { data: u } = await sb.auth.getUser();
+      // On récupère l'email cible via une requête admin-manage nécessite l'email, pas l'id : on redemande.
+      const email = prompt("Confirmez l'email de la personne à retirer :");
+      if(!email) return;
+      try {
+        const r = await callFn("admin-manage", { action:"remove", email });
+        alert(r.message);
+        renderAdmins(content);
+      } catch(e){ alert(e.message); }
+    };
+  });
+}
+
+/* ================= ROOT RENDER ================= */
+function render(){
+  if(state.view === "login") return renderLogin();
+  if(state.view === "signup") return renderSignup();
+  if(state.view === "not-admin") return renderNotAdmin();
+  if(state.view === "dashboard") return renderShell();
+}
+
+refreshSession();
+</script>
+</body>
+</html>
