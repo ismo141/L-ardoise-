@@ -1,13 +1,54 @@
+
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>L'Ardoise</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Ardoise Numérique</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+    <header class="toolbar">
+        <div class="tool-group">
+            <label for="colorPicker">Couleur :</label>
+            <input type="color" id="colorPicker" value="#000000">
+        </div>
+
+        <div class="tool-group">
+            <label for="lineWidth">Taille :</label>
+            <input type="range" id="lineWidth" min="1" max="50" value="5">
+            <span id="sizeValue">5px</span>
+        </div>
+
+        <div class="tool-group">
+            <button id="btnPencil" class="active">✏️ Crayon</button>
+            <button id="btnEraser">🧽 Gomme</button>
+            <button id="btnClear">🗑️ Effacer Tout</button>
+        </div>
+
+        <div class="tool-group">
+            <button id="btnSaveLocal">💾 Sauvegarder (Hors-Ligne)</button>
+            <button id="btnDownload">📥 Télécharger Image</button>
+            <button id="btnSyncFeed">🌐 Synchroniser avec Feed API</button>
+        </div>
+    </header>
+
+    <main class="canvas-container">
+        <canvas id="paintCanvas"></canvas>
+    </main>
+
+    <div id="statusIndicator" class="status online">Statut : En ligne</div>
+
+    <script src="app.js"></script>
+    <script>
+        // Enregistrement du Service Worker pour le support Hors Connexion
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Enregistré !'))
+                .catch(err => console.error('Erreur Service Worker :', err));
+        }
+    </script>
+</body>
 </html>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script>
