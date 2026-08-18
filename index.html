@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -30,8 +29,7 @@
 
         <div class="tool-group">
             <button id="btnSaveLocal">💾 Sauvegarder (Hors-Ligne)</button>
-            <button id="btnDownload">📥 Télécharger Image</button>
-            <button id="btnSyncFeed">🌐 Synchroniser avec Feed API</button>
+            <button id="btnDownload">📥 Télécharger Image</button> <button id="btnFedaPay" style="background-color: #28a745;">💳 Payer avec FedaPay</button>
         </div>
     </header>
 
@@ -41,9 +39,9 @@
 
     <div id="statusIndicator" class="status online">Statut : En ligne</div>
 
+    <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
     <script src="app.js"></script>
     <script>
-        // Enregistrement du Service Worker pour le support Hors Connexion
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(() => console.log('Service Worker Enregistré !'))
