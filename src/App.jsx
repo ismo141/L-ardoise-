@@ -23,7 +23,6 @@ export default function App() {
     <div style={{ backgroundColor: '#0D1117', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: '430px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         
-        {/* Affichage prioritaire des fenêtres modales */}
         {isAdminOpen ? (
           <Admin onClose={() => setIsAdminOpen(false)} />
         ) : isPaywallOpen ? (
@@ -39,7 +38,7 @@ export default function App() {
           />
         )}
 
-      </div> 
+      </div>
     </div>
   );
-} 
+}
