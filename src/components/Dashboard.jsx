@@ -1,7 +1,9 @@
-import React from 'react';
-import { Home, Users, BarChart3, LogOut, Crown, AlertCircle } from 'lucide-react';
 
-export default function Dashboard({ user, onLogout, tab, setTab, onOpenPaywall }) {
+import React from 'react';
+import { Home, Users, BarChart3, LogOut, Crown, ShieldAlert } from 'lucide-react';
+import Clients from './Clients';
+
+export default function Dashboard({ user, onLogout, tab, setTab, onOpenPaywall, onOpenAdmin }) {
   const navItems = [
     { name: 'Accueil', id: 'home', icon: Home },
     { name: 'Clients', id: 'clients', icon: Users },
@@ -17,23 +19,37 @@ export default function Dashboard({ user, onLogout, tab, setTab, onOpenPaywall }
             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
           </div>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#FFF' }}>{user?.name || 'Utilisateur'}</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#FFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {user?.name || 'Utilisateur'}
+              {user?.role === 'admin' && (
+                <span style={{ fontSize: '10px', backgroundColor: '#DC2626', color: '#FFF', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>ADMIN</span>
+              )}
+            </div>
             <div style={{ fontSize: '12px', color: '#64748B' }}>{user?.email || 'email@exemple.com'}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Bouton d'accès Admin visible uniquement pour l'administrateur */}
+          {user?.role === 'admin' && (
+            <button onClick={onOpenAdmin} style={{ padding: '8px 10px', backgroundColor: '#1E293B', color: '#F87171', border: '1px solid #7F1D1D', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 'bold' }}>
+              <ShieldAlert size={14} /> Admin
+            </button>
+          )}
+
           {!user?.isPremium && (
             <button onClick={onOpenPaywall} style={{ padding: '8px 12px', backgroundColor: '#F59E0B', color: '#000', borderRadius: '8px', border: 'none', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Crown size={14} /> PRO
             </button>
           )}
+
           <button onClick={onLogout} style={{ padding: '8px 12px', backgroundColor: '#1E293B', color: '#F87171', borderRadius: '8px', border: 'none', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <LogOut size={14} />
           </button>
         </div>
       </header>
 
-      {/* Contenu principal */}
+      {/* Contenu principal selon l'onglet */}
       <main style={{ padding: '20px', flex: 1, color: '#FFF', paddingBottom: '80px' }}>
         {tab === 'home' && (
           <div>
@@ -43,12 +59,22 @@ export default function Dashboard({ user, onLogout, tab, setTab, onOpenPaywall }
             </div>
           </div>
         )}
-        {tab === 'clients' && <h2>Gestion des Clients & Relances</h2>}
-        {tab === 'stats' && <h2>Statistiques Financières</h2>}
+
+        {/* Affichage du composant Clients */}
+        {tab === 'clients' && <Clients />}
+
+        {tab === 'stats' && (
+          <div>
+            <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>Statistiques Financières</h2>
+            <div style={{ backgroundColor: '#161B22', padding: '15px', borderRadius: '10px', border: '1px solid #1E293B' }}>
+              <p style={{ margin: 0, color: '#94A3B8', fontSize: '14px' }}>Synthèse des encaissements et retards de paiement.</p>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Navigation inférieure */}
-      <nav style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#0D1117', borderTop: '1px solid #1E293B', padding: '12px 20px', display: 'flex', justifyContent: 'space-around', boxSizing: 'border-box' }}>
+      <nav style={{ position: 'fixed', bottom: 0, width: '100%', maxWidth: '430px', backgroundColor: '#0D1117', borderTop: '1px solid #1E293B', padding: '12px 20px', display: 'flex', justifyContent: 'space-around', boxSizing: 'border-box' }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
