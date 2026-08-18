@@ -1,0 +1,8 @@
+{
+  "short_name": "Ardoise",
+  "name": "Mon Ardoise Numérique",
+  "start_url": "./index.html",
+  "background_color": "#ffffff",
+  "theme_color": "#333333",
+  "display": "standalone"
+}
