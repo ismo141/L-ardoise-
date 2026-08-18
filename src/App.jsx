@@ -52,31 +52,37 @@ export default function App() {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      let u = {};
-      let s = null;
-      try {
-        const ur = await window.storage.get(USERS_KEY, false);
-        if (ur) u = JSON.parse(ur.value);
-      } catch {}
-      try {
-        const sr = await window.storage.get(SESSION_KEY, false);
-        if (sr) s = JSON.parse(sr.value);
-      } catch {}
-      setUsers(u);
-      setSession(s);
-      setBooted(true);
-    })();
+    try {
+      const ur = localStorage.getItem(USERS_KEY);
+      if (ur) setUsers(JSON.parse(ur));
+      const sr = localStorage.getItem(SESSION_KEY);
+      if (sr) setSession(JSON.parse(sr));
+    } catch (e) {
+      console.error("Erreur lecture storage:", e);
+    }
+    setBooted(true);
   }, []);
 
   useEffect(() => {
     if (!booted) return;
-    window.storage.set(USERS_KEY, JSON.stringify(users), false).catch(() => {});
+    try {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    } catch (e) {
+      console.error("Erreur écriture users:", e);
+    }
   }, [users, booted]);
 
   useEffect(() => {
     if (!booted) return;
-    window.storage.set(SESSION_KEY, JSON.stringify(session), false).catch(() => {});
+    try {
+      if (session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    } catch (e) {
+      console.error("Erreur écriture session:", e);
+    }
   }, [session, booted]);
 
   useEffect(() => {
@@ -125,7 +131,6 @@ export default function App() {
             setToast={setToast}
           />
         )}
-        {toast && !session && null}
       </div>
     </div>
   );
@@ -134,7 +139,7 @@ export default function App() {
 /* ---------------- AUTH ---------------- */
 
 function AuthScreen({ users, onAuth, onResetPassword }) {
-  const [mode, setMode] = useState("login"); // login | signup | reset
+  const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
   const [boutique, setBoutique] = useState("");
   const [email, setEmail] = useState("");
@@ -174,7 +179,7 @@ function AuthScreen({ users, onAuth, onResetPassword }) {
       onAuth(e, {
         name: name.trim(),
         boutique: boutique.trim(),
-        password, // démo locale uniquement — un vrai backend hasherait ce mot de passe
+        password,
         isPremium: false,
       });
     } else {
@@ -340,19 +345,21 @@ function MainApp({ email, user, setUser, onLogout, toast, setToast }) {
   const key = clientsKey(email);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await window.storage.get(key, false);
-        setClients(res ? JSON.parse(res.value) : []);
-      } catch {
-        setClients([]);
-      }
-    })();
+    try {
+      const res = localStorage.getItem(key);
+      setClients(res ? JSON.parse(res) : []);
+    } catch {
+      setClients([]);
+    }
   }, [key]);
 
   useEffect(() => {
     if (clients === null) return;
-    window.storage.set(key, JSON.stringify(clients), false).catch(() => {});
+    try {
+      localStorage.setItem(key, JSON.stringify(clients));
+    } catch (e) {
+      console.error("Erreur écriture clients:", e);
+    }
   }, [clients, key]);
 
   const isPremium = !!user?.isPremium;
