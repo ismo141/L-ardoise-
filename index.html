@@ -1,52 +1,20 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mon Ardoise Numérique</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-</head>
-<body>
-
-    <header class="toolbar">
-        <div class="tool-group">
-            <label for="colorPicker">Couleur :</label>
-            <input type="color" id="colorPicker" value="#000000">
-        </div>
-
-        <div class="tool-group">
-            <label for="lineWidth">Taille :</label>
-            <input type="range" id="lineWidth" min="1" max="50" value="5">
-            <span id="sizeValue">5px</span>
-        </div>
-
-        <div class="tool-group">
-            <button id="btnPencil" class="active">✏️ Crayon</button>
-            <button id="btnEraser">🧽 Gomme</button>
-            <button id="btnClear">🗑️ Effacer Tout</button>
-        </div>
-
-        <div class="tool-group">
-            <button id="btnSaveLocal">💾 Sauvegarder (Hors-Ligne)</button>
-            <button id="btnDownload">📥 Télécharger Image</button> <button id="btnFedaPay" style="background-color: #28a745;">💳 Payer avec FedaPay</button>
-        </div>
-    </header>
-
-    <main class="canvas-container">
-        <canvas id="paintCanvas"></canvas>
-    </main>
-
-    <div id="statusIndicator" class="status online">Statut : En ligne</div>
-
+    <!-- Script FedaPay CDN -->
     <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
-    <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('Service Worker Enregistré !'))
-                .catch(err => console.error('Erreur Service Worker :', err));
-        }
-    </script>
-</body>
+    <!-- Police modernisée -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Point d'ancrage React -->
+    <div id="root"></div>
+    <!-- Point d'entrée Vite / React -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
