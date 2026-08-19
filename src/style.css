@@ -1,50 +1,72 @@
 :root {
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --bg: #f8fafc;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg-main: #f8fafc;
   --surface: #ffffff;
-  --text: #0f172a;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
   --border: #e2e8f0;
-  --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+  --radius: 16px;
+  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: var(--bg-main);
+  color: var(--text-dark);
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
-.app-wrapper {
+.app-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-/* Barre d'outils style Dribbble */
-.toolbar {
+/* En-tête style FinTech / Dribbble */
+.top-navbar {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius);
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controls-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 0.75rem 1.25rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow);
 }
 
 .tool-group {
@@ -56,33 +78,26 @@ body {
 .tool-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
+/* Inputs & Boutons */
 input[type="color"] {
-  -webkit-appearance: none;
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   cursor: pointer;
-}
-
-input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-input[type="color"]::-webkit-color-swatch {
-  border: 2px solid var(--border);
-  border-radius: 50%;
+  background: none;
 }
 
 .btn {
-  padding: 0.5rem 0.9rem;
+  padding: 0.5rem 1rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface);
-  font-size: 0.85rem;
+  color: var(--text-dark);
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -90,6 +105,16 @@ input[type="color"]::-webkit-color-swatch {
 
 .btn:hover {
   background: #f1f5f9;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
 }
 
 .btn-fedapay {
@@ -103,39 +128,40 @@ input[type="color"]::-webkit-color-swatch {
   background: #059669;
 }
 
-/* Zone Canvas de dessin */
+/* Canvas de dessin */
 .canvas-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  height: 550px;
-  box-shadow: var(--shadow-lg);
-  position: relative;
+  height: 520px;
+  box-shadow: var(--shadow);
   overflow: hidden;
+  position: relative;
 }
 
 canvas {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  display: block;
 }
 
-/* Status Indicator */
+/* Badge de statut */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 20px;
   background: #ecfdf5;
   color: #047857;
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #10b981;
 }
